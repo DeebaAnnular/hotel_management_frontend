@@ -14,7 +14,7 @@ import UserConfiguration from "./pages/UserConfiguration";
 import BreakManagement from "./features/breakManagement/BreakManagement";
 import GeneralRequest from "./features/generalRequest/GeneralRequest";
 import CustomerRequest from "./features/customerRequest/CustomerRequest";
-import CrewOnDuty from "./features/crewOnduty/CrewOnDuty";
+
 function App() {
   return (
     <Router>
@@ -85,14 +85,7 @@ function App() {
               </ProtectedPage>
             }
           />
-          <Route
-            path="/layout/crew_on_duty"
-            element={
-              <ProtectedPage>
-                <CrewOnDuty />
-              </ProtectedPage>
-            }
-          />
+          
         </Route>
       </Routes>
     </Router>
