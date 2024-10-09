@@ -23,7 +23,7 @@ export const login = createAsyncThunk(
     console.log("credential check",credentials)
     try {
       const { data } = await publicAPI.post(LoginRoutes.login, credentials);
-      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("userId", data.id);
       localStorage.setItem("username", data.username);
       localStorage.setItem("userType", data.userType);
       localStorage.setItem("jwt", data.jwt);

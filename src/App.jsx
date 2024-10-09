@@ -11,6 +11,10 @@ import Layout from "./components/Layout";
 import FloorAndRoom from "./pages/FloorAndRoom";
 import TaskManagement from "./pages/TaskManagement";
 import UserConfiguration from "./pages/UserConfiguration";
+import BreakManagement from "./features/breakManagement/BreakManagement";
+import GeneralRequest from "./features/generalRequest/GeneralRequest";
+import CustomerRequest from "./features/customerRequest/CustomerRequest";
+import CrewOnDuty from "./features/crewOnduty/CrewOnDuty";
 function App() {
   return (
     <Router>
@@ -53,7 +57,39 @@ function App() {
             path="/layout/user_management"
             element={
               <ProtectedPage>
-                <UserConfiguration/>
+                <UserConfiguration />
+              </ProtectedPage>
+            }
+          />
+          <Route
+            path="/layout/break_management"
+            element={
+              <ProtectedPage>
+                <BreakManagement />
+              </ProtectedPage>
+            }
+          />
+          <Route
+            path="/layout/general_Request"
+            element={
+              <ProtectedPage>
+                <GeneralRequest />
+              </ProtectedPage>
+            }
+          />
+          <Route
+            path="/layout/customer_request"
+            element={
+              <ProtectedPage>
+                <CustomerRequest />
+              </ProtectedPage>
+            }
+          />
+          <Route
+            path="/layout/crew_on_duty"
+            element={
+              <ProtectedPage>
+                <CrewOnDuty />
               </ProtectedPage>
             }
           />

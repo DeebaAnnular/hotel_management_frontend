@@ -55,7 +55,7 @@ const Floor = () => {
   }, [dispatch, pageNo, pageSize]);
 
   const filteredAndSortedRows = useMemo(() => {
-    let result = floorNames.filter((row) =>
+    let result = floorNames?.filter((row) =>
       row.floorName?.toLowerCase().includes(searchQuery.trim().toLowerCase())
     );
 

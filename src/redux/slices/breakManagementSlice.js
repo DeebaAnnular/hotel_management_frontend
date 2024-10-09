@@ -19,7 +19,7 @@ export const getAllBreakRequest = createAsyncThunk(
   async () => {
     try {
       const data = await getAllBreakManagementRequestAPI();
-      console.log("check", data);
+      console.log("getAllBreakRequest", data);
       return data;
     } catch (error) {
       // Return the error message for rejection
@@ -33,7 +33,7 @@ export const updateBreakRequest = createAsyncThunk(
   async (breakDetails) => {
     try {
       const responseData = await updateBreakRequestAPI(breakDetails);
-      console.log("update response", responseData);
+      console.log("updateBreakRequest response", responseData);
       return responseData.data;
     } catch (error) {
       return error.response?.data || error.message;
@@ -41,65 +41,41 @@ export const updateBreakRequest = createAsyncThunk(
   }
 );
 
-export const deleteFloorName = createAsyncThunk(
-  "floor/deleteFloorName",
-  async (id) => {
-    try {
-      const response = await deleteFloorAPI(id);
-      console.log("delete response", response);
-      return response;
-    } catch (error) {
-      return error.response?.data || error.message;
-    }
-  }
-);
 
-const floorSlice = createSlice({
-  name: "floor",
+const breakManagementSlice = createSlice({
+  name: "break",
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(getAllFloorDetails.pending, (state) => {
-        state.floorDetailsLoading = true;
-        state.floorDetailsError = null;
+      // For getAllBreakRequest
+      .addCase(getAllBreakRequest.pending, (state) => {
+        state.breakRequestDetailsLoading = true;
+        state.breakRequestDetailsError = null;
       })
-      .addCase(getAllFloorDetails.fulfilled, (state, action) => {
-        state.floorDetailsLoading = false;
-        state.floorDetails = action.payload;
+      .addCase(getAllBreakRequest.fulfilled, (state, action) => {
+        state.breakRequestDetailsLoading = false;
+        state.breakRequestDetails = action.payload;
       })
-      .addCase(getAllFloorDetails.rejected, (state, action) => {
-        state.floorDetailsLoading = false;
-        state.floorDetailsError = action.payload;
+      .addCase(getAllBreakRequest.rejected, (state, action) => {
+        state.breakRequestDetailsLoading = false;
+        state.breakRequestDetailsError = action.payload;
       })
-      // For createFloorName
-      .addCase(createFloorName.pending, (state) => {
-        state.postFloorLoading = true;
-        state.postFloorNameError = null;
+      // For updateBreakRequest
+      .addCase(updateBreakRequest.pending, (state) => {
+        state.updateBreakRequestLoading = true;
+        state.updateBreakRequestError = null;
       })
-      .addCase(createFloorName.fulfilled, (state, action) => {
-        state.postFloorLoading = false;
-        state.floorDetail = action.payload;
+      .addCase(updateBreakRequest.fulfilled, (state, action) => {
+        state.updateBreakRequestLoading = false;
+        state.updateBreakRequestdetails = action.payload;
       })
-      .addCase(createFloorName.rejected, (state, action) => {
-        state.postFloorLoading = false;
-        state.postFloorNameError = action.payload;
-      })
-      // For Delete Floor Name
-      .addCase(deleteFloorName.pending, (state) => {
-        state.deleteFloorLoading = true;
-        state.deleteFloorNameError = null;
-      })
-      .addCase(deleteFloorName.fulfilled, (state, action) => {
-        state.postFloorLoading = false;
-        state.deleteFloorSucessMsg = action.payload;
-      })
-      .addCase(deleteFloorName.rejected, (state, action) => {
-        state.deleteFloorLoading = false;
-        state.deleteFloorNameError = action.payload;
+      .addCase(updateBreakRequest.rejected, (state, action) => {
+        state.updateBreakRequestLoading = false;
+        state.updateBreakRequestError = action.payload;
       });
   },
 });
 
-export const selectFloorDetails = (state) => state.floor.floorDetails;
-export default floorSlice.reducer;
+export const selectBreakRequestDetails = (state) => state.break.breakRequestDetails;
+export default breakManagementSlice.reducer;

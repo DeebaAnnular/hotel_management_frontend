@@ -5,22 +5,17 @@ import {
   List,
   ListItem,
   ListItemPrefix,
-  ListItemSuffix,
-  Chip,
   Accordion,
   AccordionHeader,
   AccordionBody,
 } from "@material-tailwind/react";
-import {
-  PresentationChartBarIcon,
-  ShoppingBagIcon,
-  UserCircleIcon,
-  Cog6ToothIcon,
-  InboxIcon,
-  PowerIcon,
-} from "@heroicons/react/24/solid";
 import { ChevronRightIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import { MdOutlineAdminPanelSettings } from "react-icons/md";
+import { GrUserManager } from "react-icons/gr";
+import { FiCoffee } from "react-icons/fi";
+import {
+  MdOutlineAdminPanelSettings,
+  MdOutlineShoppingCartCheckout,
+} from "react-icons/md";
 import hotelLogo from "../assets/hotelLogo.png";
 import { Link } from "react-router-dom";
 
@@ -32,7 +27,7 @@ const Sidebar = () => {
   };
 
   return (
-    <Card className="h-[calc(100vh)] w-full max-w-[17rem] p-4 shadow-xl shadow-blue-gray-900/5">
+    <Card className="h-[calc(100vh)] w-full max-w-[17rem] p-4 shadow-xl shadow-blue-gray-900/5 border-l-2 border-[#228b22]">
       <div className="mb-2 p-4 w-full flex items-center justify-center">
         <img src={hotelLogo} className="w-24" />
       </div>
@@ -90,80 +85,36 @@ const Sidebar = () => {
             </List>
           </AccordionBody>
         </Accordion>
-        {/* <Accordion
-          open={open === 2}
-          icon={
-            <ChevronDownIcon
-              strokeWidth={2.5}
-              className={`mx-auto h-4 w-4 transition-transform ${
-                open === 2 ? "rotate-180" : ""
-              }`}
-            />
-          }
-        >
-          <ListItem className="p-0" selected={open === 2}>
-            <AccordionHeader
-              onClick={() => handleOpen(2)}
-              className="border-b-0 p-3"
-            >
-              <ListItemPrefix>
-                <ShoppingBagIcon className="h-5 w-5" />
-              </ListItemPrefix>
-              <Typography color="blue-gray" className="mr-auto font-normal">
-                E-Commerce
-              </Typography>
-            </AccordionHeader>
+        <Link to="/layout/break_management">
+          <ListItem className="border-b-0 p-3" selected={open === 1}>
+            <ListItemPrefix>
+              <FiCoffee className="h-5 w-5" />
+            </ListItemPrefix>
+            <Typography color="blue-gray" className="mr-auto font-normal">
+              Break Managemaent
+            </Typography>
           </ListItem>
-          <AccordionBody className="py-1">
-            <List className="p-0">
-              <ListItem>
-                <ListItemPrefix>
-                  <ChevronRightIcon strokeWidth={3} className="h-3 w-5" />
-                </ListItemPrefix>
-                Orders
-              </ListItem>
-              <ListItem>
-                <ListItemPrefix>
-                  <ChevronRightIcon strokeWidth={3} className="h-3 w-5" />
-                </ListItemPrefix>
-                Products
-              </ListItem>
-            </List>
-          </AccordionBody>
-        </Accordion>
-        <ListItem>
-          <ListItemPrefix>
-            <InboxIcon className="h-5 w-5" />
-          </ListItemPrefix>
-          Inbox
-          <ListItemSuffix>
-            <Chip
-              value="14"
-              size="sm"
-              variant="ghost"
-              color="blue-gray"
-              className="rounded-full"
-            />
-          </ListItemSuffix>
-        </ListItem>
-        <ListItem>
-          <ListItemPrefix>
-            <UserCircleIcon className="h-5 w-5" />
-          </ListItemPrefix>
-          Profile
-        </ListItem>
-        <ListItem>
-          <ListItemPrefix>
-            <Cog6ToothIcon className="h-5 w-5" />
-          </ListItemPrefix>
-          Settings
-        </ListItem>
-        <ListItem>
-          <ListItemPrefix>
-            <PowerIcon className="h-5 w-5" />
-          </ListItemPrefix>
-          Log Out
-        </ListItem> */}
+        </Link>
+        <Link to="/layout/general_request">
+          <ListItem className="border-b-0 p-3" selected={open === 1}>
+            <ListItemPrefix>
+              <MdOutlineShoppingCartCheckout className="h-5 w-5" />
+            </ListItemPrefix>
+            <Typography color="blue-gray" className="mr-auto font-normal">
+              General Request
+            </Typography>
+          </ListItem>
+        </Link>
+        <Link to="/layout/customer_request">
+          <ListItem className="border-b-0 p-3" selected={open === 1}>
+            <ListItemPrefix>
+              <MdOutlineShoppingCartCheckout className="h-5 w-5" />
+            </ListItemPrefix>
+            <Typography color="blue-gray" className="mr-auto font-normal">
+              Customer Request
+            </Typography>
+          </ListItem>
+        </Link>
       </List>
     </Card>
   );
