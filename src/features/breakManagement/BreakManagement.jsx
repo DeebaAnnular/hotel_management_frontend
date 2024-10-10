@@ -141,14 +141,14 @@ const BreakManagement = () => {
       <div className="w-full h-[15%] flex items-center justify-evenly">
         <Card
           onClick={getTotalServicePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#639d82]"
+          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#639d82] cursor-pointer"
         >
           <p className=" text-[#639d82]">Total</p>
           <p className="text-xl">{totalCrewCount?.totalServiceCount}</p>
         </Card>
         <Card
           onClick={getTotalBreakPerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#DD3E3ED4]"
+          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#DD3E3ED4] cursor-pointer"
         >
           <p className=" text-[#DD3E3ED4]">On break</p>
           <p className="text-xl">
@@ -157,7 +157,7 @@ const BreakManagement = () => {
         </Card>
         <Card
           onClick={getTotalActivePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#008000]"
+          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#008000] cursor-pointer"
         >
           <p className=" text-[#008000]">Available</p>
           <p className="text-xl">
@@ -166,7 +166,7 @@ const BreakManagement = () => {
         </Card>
         <Card
           onClick={getTotalAvailablePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#EE80EE]"
+          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#EE80EE] cursor-pointer"
         >
           <p className=" text-[#EE80EE]">Active</p>
           <p className="text-xl">{totalCrewCount?.serviceWithJobStatusCount}</p>
