@@ -170,7 +170,7 @@ const Room = () => {
             <Button
               variant="text"
               color="blue-gray"
-              onClick={{handleOpen}}
+              onClick={handleOpen}
               className="!absolute top-2 right-2 p-2"
             >
               <MdClose className="h-6 w-6" />
