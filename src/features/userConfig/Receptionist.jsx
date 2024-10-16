@@ -49,7 +49,7 @@ const Receptionist = () => {
 
   const handleOpen = () => setOpen(!open);
 
-  const fetchData = async (currentPage,pageSize) => {
+  const fetchData = async (currentPage, pageSize) => {
     try {
       setIsLoading(true);
       const action = await dispatch(
@@ -335,7 +335,7 @@ const Receptionist = () => {
 
       <CardBody className="overflow-scroll px-0">
         <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead>
+          <thead className="sticky top-0 bg-blue-gray-50/50 z-10">
             <tr>
               {TABLE_HEAD.map((head, index) => (
                 <th

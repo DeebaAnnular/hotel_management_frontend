@@ -5,6 +5,7 @@ import roomReducer from "../slices/roomSlice";
 import taskReducer from "../slices/taskSlice";
 import userReducer from "../slices/userConfigSlice";
 import breakManagementReducer from "../slices/breakManagementSlice";
+import  generalRequestsReducer from "../slices/generalRequestSlice";
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     room: roomReducer,
     task: taskReducer,
     user: userReducer,
-    break:breakManagementReducer
+    break:breakManagementReducer,
+    generalRequests: generalRequestsReducer,
   },
 });

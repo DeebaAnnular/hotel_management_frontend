@@ -12,6 +12,8 @@ const Header = () => {
 
   const username = useSelector(selectUserName);
   const firstLetter = username?.charAt(0).toUpperCase() || "";
+  const requestCount = useSelector((state) => state.generalRequests.count);
+
 
   const handleLogout = () => {
     dispatch(logout());
@@ -24,7 +26,7 @@ const Header = () => {
 
       <div className="flex items-center space-x-4">
         <div className="flex items-center justify-evenly w-[18rem] bg-darkGray p-2 rounded">
-          <Switch
+          {/* <Switch
             id="custom-switch-component"
             ripple={false}
             className="h-full w-full checked:bg-[#228b22]"
@@ -34,10 +36,10 @@ const Header = () => {
             circleProps={{
               className: "h-4 w-4 before:hidden left-0.5 border-none",
             }}
-          />
+          /> */}
           <p className="flex items-center">
             <FaBell className="mr-1" />
-            Request-0
+            Request- {requestCount}
           </p>
           <p className="h-6 w-6 rounded-full bg-purpleColor flex items-center justify-center text-white">
             {firstLetter}

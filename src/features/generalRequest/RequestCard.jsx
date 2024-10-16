@@ -65,7 +65,7 @@ const RequestCard = ({
             variant="paragraph"
             className=" text-[#15048d] font-semibold"
           >
-            {name}
+            {name?name:"-"}
           </Typography>
         </div>
 
@@ -82,7 +82,7 @@ const RequestCard = ({
             color="#15048d"
             className=" text-green-900 font-semibold"
           >
-            {servicePersonName}
+            {servicePersonName?servicePersonName: "-"}
           </Typography>
         </div>
 
@@ -98,7 +98,7 @@ const RequestCard = ({
             variant="paragraph"
             className=" text-[#e30011] font-semibold"
           >
-            {location}
+            {location?location:"-"}
           </Typography>
         </div>
 
@@ -131,7 +131,7 @@ const RequestCard = ({
             variant="paragraph"
             className=" text-green-900 font-semibold"
           >
-            {generalTask}
+            {generalTask?generalTask:"-"}
           </Typography>
         </div>
 

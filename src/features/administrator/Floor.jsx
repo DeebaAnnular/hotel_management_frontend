@@ -261,7 +261,7 @@ const Floor = () => {
 
       <CardBody className="overflow-scroll px-0">
         <table className="w-full min-w-max table-auto text-left">
-          <thead>
+          <thead className="sticky top-0 bg-blue-gray-50/50 z-10" >
             <tr>
               {TABLE_HEAD.map((head, index) => (
                 <th

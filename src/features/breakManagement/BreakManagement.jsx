@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from "react";
 import {
   ChevronUpDownIcon,
-  TrashIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import {
   Button,
   Dialog,
   Card,
-  CardHeader,
   CardBody,
-  CardFooter,
   Typography,
   Input,
 } from "@material-tailwind/react";
-import { MdClose } from "react-icons/md";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   getAllBreakRequest,
   updateBreakRequest,
@@ -27,6 +23,8 @@ import {
   getTotalAvailableAPI,
   getTotalServiceAPI,
 } from "../../services/breakManagement";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TABLE_HEAD = [
   "Service Person",
@@ -41,70 +39,102 @@ const BreakManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [openUpdate, setOpenUpdate] = useState(false);
-  const [openModal, setOpenModal] = useState(false); // New state for modal
+  const [openModal, setOpenModal] = useState(false);
   const [breakRequests, setBreakRequest] = useState([]);
   const [totalCrewCount, setTotalCrewCount] = useState(null);
-  const [totalCrewPerson, setTotalCrewPerson] = useState([]);
-  const [totalBreakPerson, setTotalBreakPerson] = useState([]);
-  const [totalAvilablePerson, setTotalAvilablePerson] = useState([]);
-  const [totalActivePerson, setTotalActivePerson] = useState([]);
-
-  // State for updating form fields
-  const [selectedBreakId, setSelectedBreakId] = useState(null);
-  const [status, setStatus] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-
-  // State for modal
   const [modalTitle, setModalTitle] = useState("");
   const [personNames, setPersonNames] = useState([]);
+  const [error, setError] = useState(null);
+
+  const [selectedBreak, setSelectedBreak] = useState({
+    breakDetailsId: null,
+    status: "",
+    startTime: "",
+    endTime: "",
+    approvalName: "",
+  });
 
   const dispatch = useDispatch();
 
   const fetchBreakRequest = async () => {
-    const data = await dispatch(getAllBreakRequest());
-    setBreakRequest(data.payload);
+    try {
+      const data = await dispatch(getAllBreakRequest());
+      setBreakRequest(data.payload);
+    } catch (error) {
+      console.error("Error fetching break requests:", error);
+      setError("Failed to fetch break requests. Please try again later.");
+    }
   };
 
   const getCrewCount = async () => {
-    const data = await getCrewCountAPI();
-    setTotalCrewCount(data);
+    try {
+      const data = await getCrewCountAPI();
+      console.log("count", data.data);
+      setTotalCrewCount(data.data);
+    } catch (error) {
+      console.error("Error fetching crew count:", error);
+      setError("Failed to fetch crew count. Please try again later.");
+      toast.error(
+        error || "Failed to fetch crew count. Please try again later"
+      );
+    }
   };
 
   const getTotalServicePerson = async () => {
-    const data = await getTotalServiceAPI();
-    console.log("getTotalServicePerson", data);
-    setTotalCrewPerson(data);
-    setModalTitle("Total Service Persons");
-    setPersonNames(data); // Assuming data is an array of names
-    setOpenModal(true);
+    try {
+      const data = await getTotalServiceAPI();
+      console.log("getTotalServicePerson", data);
+      setPersonNames(data);
+      setModalTitle("Total Service Persons");
+      setOpenModal(true);
+    } catch (error) {
+      console.error("Error fetching total service persons:", error);
+      setError(
+        "Failed to fetch total service persons. Please try again later."
+      );
+      toast.error(
+        "Failed to fetch total service persons. Please try again later."
+      );
+    }
   };
 
   const getTotalBreakPerson = async () => {
-    const data = await getTotalBreakAPI();
-    console.log("getTotalBreakAPI", data);
-    setTotalBreakPerson(data);
-    setModalTitle("On Break Persons");
-    setPersonNames(data); // Assuming data is an array of names
-    setOpenModal(true);
+    try {
+      const data = await getTotalBreakAPI();
+      setPersonNames(data);
+      setModalTitle("On Break Persons");
+      setOpenModal(true);
+    } catch (error) {
+      console.error("Error fetching persons on break:", error);
+      setError("Failed to fetch persons on break. Please try again later.");
+      toast.error("Failed to fetch person on break. Please try again later.");
+    }
   };
 
   const getTotalActivePerson = async () => {
-    const data = await getTotalActiveAPI();
-    console.log("getTotalActivePerson ", data);
-    setTotalActivePerson(data);
-    setModalTitle("Available Persons");
-    setPersonNames(data); // Assuming data is an array of names
-    setOpenModal(true);
+    try {
+      const data = await getTotalActiveAPI();
+      setPersonNames(data);
+      setModalTitle("Available Persons");
+      setOpenModal(true);
+    } catch (error) {
+      console.error("Error fetching active persons:", error);
+      setError("Failed to fetch active persons. Please try again later.");
+      toast.error("Failed to fetch active persons. Please try again later.");
+    }
   };
 
   const getTotalAvailablePerson = async () => {
-    const data = await getTotalAvailableAPI();
-    console.log("getTotalAvailableAPI ", data);
-    setTotalAvilablePerson(data);
-    setModalTitle("Active Persons");
-    setPersonNames(data); // Assuming data is an array of names
-    setOpenModal(true);
+    try {
+      const data = await getTotalAvailableAPI();
+      setPersonNames(data);
+      setModalTitle("Active Persons");
+      setOpenModal(true);
+    } catch (error) {
+      console.error("Error fetching available persons:", error);
+      setError("Failed to fetch available persons. Please try again later.");
+      toast.error("Failed to fetch available persons. Please try again later.");
+    }
   };
 
   useEffect(() => {
@@ -112,63 +142,133 @@ const BreakManagement = () => {
     getCrewCount();
   }, [dispatch]);
 
-  // Open update form with pre-filled details
   const handleOpenUpdateForm = (breakDetails) => {
-    setSelectedBreakId(breakDetails.breakDetailsId);
-    setStatus(breakDetails.status || ""); // Set current status
-    setStartTime(breakDetails.startTime || ""); // Set current start time
-    setEndTime(breakDetails.endTime || ""); // Set current end time
-    setOpenUpdate(true);
+    try {
+      setSelectedBreak({
+        breakDetailsId: breakDetails.breakDetailsId,
+        status: breakDetails.status || "",
+        startTime: formatToISO(breakDetails.startTime) || "",
+        endTime: formatToISO(breakDetails.endTime) || "",
+        approvalName:
+          breakDetails.approvalName || localStorage.getItem("username"),
+      });
+      setOpenUpdate(true);
+    } catch (error) {
+      console.error("Error opening update form:", error);
+      setError("Failed to open update form. Please try again.");
+    }
   };
 
   const handleUpdateRequest = async () => {
-    const details = {
-      breakDetailsId: selectedBreakId,
-      status,
-      startTime,
-      endTime,
-      approvalName: localStorage.getItem("username"),
-    };
+    try {
+      const resultAction = await dispatch(updateBreakRequest(selectedBreak));
 
-    await dispatch(updateBreakRequest(details));
-    alert("Break Request Updated Successfully!");
-    fetchBreakRequest();
-    setOpenUpdate(false);
+      if (updateBreakRequest.fulfilled.match(resultAction)) {
+        toast.success("Break request successfully updated!");
+        await fetchBreakRequest();
+        setOpenUpdate(false);
+      } else {
+        // If rejected, handle the error
+        toast.error(
+          resultAction.payload ||
+            "Error occurred while updating the break request"
+        );
+        console.error("Error updating break request:", resultAction.payload);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error.message);
+      toast.error(error || "Failed to update break request. Please try again.");
+    }
   };
 
+  function formatToISO(dateString) {
+    try {
+      return new Date(dateString).toISOString().slice(0, 16);
+    } catch (error) {
+      console.error("Error formatting date to ISO:", error);
+      return "";
+    }
+  }
+
+  function formatToIST(dateString) {
+    try {
+      return new Date(dateString).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    } catch (error) {
+      console.error("Error formatting date to IST:", error);
+      return "Invalid Date";
+    }
+  }
   return (
     <Card className="h-full w-full bg-primaryBg p-8">
       <div className="w-full h-[15%] flex items-center justify-evenly">
         <Card
-          onClick={getTotalServicePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#639d82] cursor-pointer"
+          onClick={
+            totalCrewCount?.totalServiceCount > 0 ? getTotalServicePerson : null
+          }
+          className={`w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#639d82] cursor-pointer ${
+            totalCrewCount?.totalServiceCount === 0
+              ? "pointer-events-none opacity-50"
+              : ""
+          }`}
         >
-          <p className=" text-[#639d82]">Total</p>
+          <p className="text-[#639d82]">Total</p>
           <p className="text-xl">{totalCrewCount?.totalServiceCount}</p>
         </Card>
+
         <Card
-          onClick={getTotalBreakPerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#DD3E3ED4] cursor-pointer"
+          onClick={
+            totalCrewCount?.serviceWithBreakStatusCount > 0
+              ? getTotalBreakPerson
+              : null
+          }
+          className={`w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#DD3E3ED4] cursor-pointer ${
+            totalCrewCount?.serviceWithBreakStatusCount === 0
+              ? "pointer-events-none opacity-50"
+              : ""
+          }`}
         >
-          <p className=" text-[#DD3E3ED4]">On break</p>
+          <p className="text-[#DD3E3ED4]">On break</p>
           <p className="text-xl">
             {totalCrewCount?.serviceWithBreakStatusCount}
           </p>
         </Card>
+
         <Card
-          onClick={getTotalActivePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#008000] cursor-pointer"
+          onClick={
+            totalCrewCount?.serviceWithoutJobSatusCount > 0
+              ? getTotalActivePerson
+              : null
+          }
+          className={`w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#008000] cursor-pointer ${
+            totalCrewCount?.serviceWithoutJobSatusCount === 0
+              ? "pointer-events-none opacity-50"
+              : ""
+          }`}
         >
-          <p className=" text-[#008000]">Available</p>
+          <p className="text-[#008000]">Available</p>
           <p className="text-xl">
             {totalCrewCount?.serviceWithoutJobSatusCount}
           </p>
         </Card>
+
         <Card
-          onClick={getTotalAvailablePerson}
-          className="w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#EE80EE] cursor-pointer"
+          onClick={
+            totalCrewCount?.serviceWithJobStatusCount > 0
+              ? getTotalAvailablePerson
+              : null
+          }
+          className={`w-[20%] h-[75%] flex items-center justify-center border-l-4 border-[#EE80EE] cursor-pointer ${
+            totalCrewCount?.serviceWithJobStatusCount === 0
+              ? "pointer-events-none opacity-50"
+              : ""
+          }`}
         >
-          <p className=" text-[#EE80EE]">Active</p>
+          <p className="text-[#EE80EE]">Active</p>
           <p className="text-xl">{totalCrewCount?.serviceWithJobStatusCount}</p>
         </Card>
       </div>
@@ -210,7 +310,7 @@ const BreakManagement = () => {
 
         <CardBody className="overflow-y-scroll px-0 mx-3">
           <table className="w-full min-w-max table-auto text-left">
-            <thead>
+            <thead className="sticky top-0 bg-blue-gray-50/50 z-10">
               <tr>
                 {TABLE_HEAD.map((head, index) => (
                   <th
@@ -249,7 +349,7 @@ const BreakManagement = () => {
                     <tr key={breakDetails.breakDetailsId}>
                       <td className={classes}>
                         <Typography variant="small" color="blue-gray">
-                          {breakDetails.servicePersonName}
+                          {breakDetails.userName}
                         </Typography>
                       </td>
                       <td className={classes}>
@@ -259,12 +359,12 @@ const BreakManagement = () => {
                       </td>
                       <td className={classes}>
                         <Typography variant="small" color="blue-gray">
-                          {breakDetails.startTime}
+                          {formatToIST(breakDetails.startTime)}
                         </Typography>
                       </td>
                       <td className={classes}>
                         <Typography variant="small" color="blue-gray">
-                          {breakDetails.endTime}
+                          {formatToIST(breakDetails.endTime)}
                         </Typography>
                       </td>
                       <td className={classes}>
@@ -286,7 +386,7 @@ const BreakManagement = () => {
                         >
                           Edit
                         </Button>
-                        <Button
+                        {/* <Button
                           onClick={() =>
                             alert("Delete Functionality Not Implemented")
                           }
@@ -295,7 +395,7 @@ const BreakManagement = () => {
                           color="red"
                         >
                           <TrashIcon className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                       </td>
                     </tr>
                   );
@@ -318,7 +418,7 @@ const BreakManagement = () => {
       <Dialog
         open={openUpdate}
         handler={() => setOpenUpdate(false)}
-        className="w-[15rem] h-[35rem] overflow-y-auto"
+        className=" w-[5rem] h-[25rem] overflow-y-auto"
       >
         <Dialog.Header>Update Break Request</Dialog.Header>
         <Dialog.Body>
@@ -326,44 +426,61 @@ const BreakManagement = () => {
             <label htmlFor="status">Status</label>
             <Input
               id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              value={selectedBreak.status}
+              onChange={(e) =>
+                setSelectedBreak({ ...selectedBreak, status: e.target.value })
+              }
               className="mt-1"
             />
             <label htmlFor="startTime">Start Time</label>
             <Input
               id="startTime"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              type="datetime-local"
+              value={selectedBreak.startTime}
+              onChange={(e) =>
+                setSelectedBreak({
+                  ...selectedBreak,
+                  startTime: e.target.value,
+                })
+              }
               className="mt-1"
             />
             <label htmlFor="endTime">End Time</label>
             <Input
               id="endTime"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
+              type="datetime-local"
+              value={selectedBreak.endTime}
+              onChange={(e) =>
+                setSelectedBreak({ ...selectedBreak, endTime: e.target.value })
+              }
               className="mt-1"
             />
+            {/* <label htmlFor="approvalName">Approval Name</label>
+            <Input
+              id="approvalName"
+              value={selectedBreak.approvalName}
+              onChange={(e) => setSelectedBreak({...selectedBreak, approvalName: e.target.value})}
+              className="mt-1"
+            /> */}
           </div>
         </Dialog.Body>
         <Dialog.Footer>
           <Button
             variant="text"
             color="red"
+            className=" mr-3"
             onClick={() => setOpenUpdate(false)}
           >
             <span>Cancel</span>
           </Button>
           <Button
             onClick={handleUpdateRequest}
-            variant="gradient"
-            color="green"
+            className=" bg-transparent text-[#557c55] hover:bg-[#557c55] hover:text-white"
           >
             <span>Update</span>
           </Button>
         </Dialog.Footer>
       </Dialog>
-
       {/* Names Modal */}
       <Dialog
         open={openModal}
@@ -399,6 +516,15 @@ const BreakManagement = () => {
           </Button>
         </Dialog.Footer>
       </Dialog>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </Card>
   );
 };

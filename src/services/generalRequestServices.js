@@ -50,8 +50,8 @@ export const getAllRooms = async () => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("getAllRooms response", response.data);
-    return response.data;
+    console.log("getAllRooms response", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.log("Error fetching room details: ", error);
     throw Error(error.response?.data.message || "Error fetching data");
@@ -66,8 +66,8 @@ export const getAllFloor = async () => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("getAllFloor response", response.data);
-    return response.data;
+    console.log("getAllFloor response", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.log("Error fetching floor details: ", error);
     throw Error(error.response?.data.message || "Error fetching data");
@@ -82,8 +82,8 @@ export const getAllTaskData = async () => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("getAllTaskData response", response.data);
-    return response.data;
+    console.log("getAllTaskData response", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.log("Error fetching all task data details: ", error);
     throw Error(error.response?.data.message || "Error fetching data");

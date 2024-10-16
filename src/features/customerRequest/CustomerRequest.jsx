@@ -22,8 +22,10 @@ const CustomerRequest = () => {
   const fetchGeneralRequests = async () => {
     try {
       const fetchAllCustomerRequest = await getAllCustomerRequest();
-      setAllCustomerRequest(fetchAllCustomerRequest);
+      console.log("general request",fetchAllCustomerRequest.data )
+      setAllCustomerRequest(fetchAllCustomerRequest.data);
     } catch (error) {
+      setAllCustomerRequest([]);
       console.error("Error fetching general requests", error);
     }
   };

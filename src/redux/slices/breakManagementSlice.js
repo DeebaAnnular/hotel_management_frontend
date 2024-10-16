@@ -36,6 +36,7 @@ export const updateBreakRequest = createAsyncThunk(
       console.log("updateBreakRequest response", responseData);
       return responseData.data;
     } catch (error) {
+      console.log("error",error.message)
       return error.response?.data || error.message;
     }
   }
