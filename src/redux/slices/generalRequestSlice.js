@@ -6,7 +6,7 @@ export const fetchGeneralRequests = createAsyncThunk(
   'generalRequests/fetchGeneralRequests',
   async () => {
     const response = await getAllGeneralRequest();
-    console.log("general request from slice",response.data)
+    // console.log("general request from slice",response.data)
     return response.data; // Adjust based on the structure of your response
   }
 );

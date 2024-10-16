@@ -69,7 +69,8 @@ const Floor = () => {
       setTotalRecords(allFloorDetails.totalRecords);
       setTotalPages(Math.ceil(allFloorDetails.totalRecords / size));
     } catch (error) {
-      // toast.error(floorDetailsError);
+      setAllFloorData([]);
+       toast.error(floorDetailsError || error);
     }
   };
 

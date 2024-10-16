@@ -93,6 +93,7 @@ const GeneralTask = () => {
       setTotalRecords(response?.payload?.totalRecords);
       setTotalPages(Math.ceil(response?.payload?.totalRecords / pageSize));
     } catch (error) {
+      setAllGeneralTask([]);
       console.log("error in fetching general task list", error);
       toast.error(generalTaskListError);
     }

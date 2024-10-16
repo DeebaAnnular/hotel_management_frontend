@@ -89,8 +89,9 @@ const CustomerTask = () => {
       setTotalRecords(response?.payload?.totalRecords);
       setTotalPages(Math.ceil(response?.payload?.totalRecords / pageSize));
     } catch (error) {
+      setAllCustomerTask([]);
       console.log("error in fetching general task list", error);
-      toast.error(customerTaskListError);
+      toast.error(customerTaskListError || error);
     }
   };
 
@@ -99,15 +100,12 @@ const CustomerTask = () => {
       const resultAction = await dispatch(deleteTask(taskDataId));
       if (deleteTask.fulfilled.match(resultAction)) {
         toast.success("Task Deleted Successfully!");
-        fetchAllCustomerTask(currentPage, pageSize); 
+        fetchAllCustomerTask(currentPage, pageSize);
       } else {
         allCustomerTask && toast.error(deleteTaskError);
       }
     } catch (error) {
-      allCustomerTask &&
-        toast.error(
-          deleteTaskError 
-        );
+      allCustomerTask && toast.error(deleteTaskError);
     }
   };
 
@@ -253,7 +251,7 @@ const CustomerTask = () => {
       </div>
       <CardBody className="overflow-scroll px-0">
         <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead className="sticky top-0 bg-blue-gray-50/50 z-10" >
+          <thead className="sticky top-0 bg-blue-gray-50/50 z-10">
             <tr>
               {TABLE_HEAD.map((head, index) => (
                 <th

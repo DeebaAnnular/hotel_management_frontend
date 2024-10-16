@@ -175,7 +175,8 @@ const Room = () => {
         );
       }
     } catch (error) {
-      toast.error(deleteRoomNameError);
+      setAllRoomDetails([])
+      toast.error(deleteRoomNameError||error);
     }
   };
 
