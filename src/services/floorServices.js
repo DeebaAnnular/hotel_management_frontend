@@ -6,29 +6,26 @@ import axios from "axios";
 const baseURL = "http://13.127.57.68:8080";
 
 export const getAllFoorDetailsAPI = async (pageNo, pageSize) => {
+  const token = localStorage.getItem("jwt");
   try {
-    const token = localStorage.getItem("jwt"); // Retrieve the token from localStorage
-
     const response = await axios.get(
       `${baseURL}/floor/getAllFloor?pageNo=${pageNo}&pageSize=${pageSize}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`, // Set the Bearer token in the Authorization header
+          Authorization: `Bearer ${token}`,
         },
       }
     );
-
-    return response.data.data; // Return the data directly
+    return response.data.data;
   } catch (error) {
-    console.log("Error fetching floor details: ", error);
-    throw Error(error.response?.data.message || "Error fetching data");
+    console.error("API Error:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error fetching data");
   }
 };
 
 export const postFloorNameAPI = async (floorName) => {
+  const token = localStorage.getItem("jwt");
   try {
-    const token = localStorage.getItem("jwt");
-
     const response = await axios.post(
       `${baseURL}/floor/saveFloorDetails`,
       floorName,
@@ -38,13 +35,13 @@ export const postFloorNameAPI = async (floorName) => {
         },
       }
     );
-    console.log("check", response.data);
-    return response.data; // Return the response data
+    return response.data;
   } catch (error) {
-    console.log("Error saving floor details: ", error);
-    throw Error(error.response?.data.message || "Error saving data");
+    console.error("API Error:", error.response?.data || error.message);
+    throw error.response?.data || new Error("Error creating floor");
   }
 };
+
 
 export const deleteFloorAPI = async (id) => {
   try {
@@ -58,9 +55,11 @@ export const deleteFloorAPI = async (id) => {
       }
     );
     console.log("delete response", response);
-    return "Sucessfully Deleted"; 
+    return "Successfully Deleted";
   } catch (error) {
-    console.log("Error happens deleting floor details: ", error);
-    throw Error(error.response?.data.message || "Couldn't Delete Please Check");
+   console.log("delete service",error.response?.data)
+  
+    
+    throw error.response?.data || new Error("Error while deleting floor");
   }
 };

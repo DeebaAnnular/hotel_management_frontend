@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
-  getAllRoomDetailsAPI, deleteRoomAPI, postRoomAPI,
+  getAllRoomDetailsAPI,
+  deleteRoomAPI,
+  postRoomAPI,
 } from "../../services/roomServices";
 
 // Initial state
@@ -19,12 +21,15 @@ const initialState = {
 // Thunk for getting all room details
 export const getAllRoomDetails = createAsyncThunk(
   "room/getAllRoomDetails",
-  async ({ pageNo, pageSize }) => {
+  async ({ pageNo, pageSize },{ rejectWithValue }) => {
     try {
       const data = await getAllRoomDetailsAPI(pageNo, pageSize);
       return data;
     } catch (error) {
-      return error.response?.data || error.message;
+      console.error("Thunk Error:", error);
+      return rejectWithValue(
+        error.data || "An error occurred while fetching floor details"
+      );
     }
   }
 );
@@ -32,30 +37,29 @@ export const getAllRoomDetails = createAsyncThunk(
 // Thunk for creating a room
 export const createRoom = createAsyncThunk(
   "room/createRoom",
-  async (roomDetails) => {
+  async (roomDetails,{ rejectWithValue }) => {
     try {
       const responseData = await postRoomAPI(roomDetails);
       console.log("room details", responseData.data);
-      return responseData.data;
+      return responseData;
     } catch (error) {
-      return error.response?.data || error.message;
+      return rejectWithValue(
+        error.data || "An error occurred while creating floor"
+      );
     }
   }
 );
 
 // Thunk for deleting a room
-export const deleteRoom = createAsyncThunk(
-  "room/deleteRoom",
-  async (id) => {
-    try {
-      const response = await deleteRoomAPI(id);
-      console.log("delete response", response);
-      return response;
-    } catch (error) {
-      return error.response?.data || error.message;
-    }
+export const deleteRoom = createAsyncThunk("room/deleteRoom", async (id,{ rejectWithValue }) => {
+  try {
+    const response = await deleteRoomAPI(id);
+    console.log("delete response", response);
+    return response;
+  } catch (error) {
+    return rejectWithValue(error.data);
   }
-);
+});
 
 // Slice
 const roomSlice = createSlice({
@@ -103,6 +107,7 @@ const roomSlice = createSlice({
       })
       .addCase(deleteRoom.rejected, (state, action) => {
         state.deleteRoomLoading = false;
+        console.log("Error at room slice",action.payload);
         state.deleteRoomNameError = action.payload;
       });
   },

@@ -11,6 +11,8 @@ import {
   CardBody,
   CardFooter,
   Dialog,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -20,6 +22,8 @@ import {
   selectCustomerList,
 } from "../../redux/slices/userConfigSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TABLE_HEAD = [
   "Customer Name",
@@ -37,20 +41,37 @@ const CreateCustomer = () => {
   const [roomNumber, setRoomNumber] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [pageNo, setPageNo] = useState(1);
   const [customerData, setCustomerData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-  const pageSize = 50;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectKey, setSelectKey] = useState(0);
+  const [formError, setFormError] = useState("");
+
   const dispatch = useDispatch();
+
+  const { customerListError, postUserDetailsError,  deleteUserDetailError} =
+    useSelector((state) => state.user);
 
   const handleOpen = () => setOpen(!open);
 
-  const fetchData = async () => {
+  const fetchData = async (currentPage, pageSize) => {
     try {
-      const action = await dispatch(getAllCustomerDetail({ pageNo, pageSize }));
+      const action = await dispatch(
+        getAllCustomerDetail({pageNo:currentPage, pageSize })
+      );
       if (getAllCustomerDetail.fulfilled.match(action)) {
-        setCustomerData(action.payload);
+        console.log("customer data", action.payload);
+        setCustomerData(action.payload.usersPage);
+        setTotalRecords(action.payload.totalRecords);
+        setTotalPages(Math.ceil(action.payload.totalRecords / pageSize));
+      }
+      else{
+        setCustomerData([]);
+        toast.error(customerListError)
       }
     } catch (error) {
       console.error("Error fetching customer data:", error);
@@ -58,8 +79,8 @@ const CreateCustomer = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageNo, dispatch]);
+    fetchData(currentPage, pageSize);
+  }, [currentPage, pageSize, dispatch]);
 
   const filteredAndSortedCustomers = useMemo(() => {
     let result = customerData?.filter((customer) =>
@@ -79,7 +100,26 @@ const CreateCustomer = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!customerName) errors.customerName = "Customer name is required.";
+    if (!phoneNumber) {
+      errors.phoneNumber = "Phone number is required.";
+    } else if (!/^\d{10}$/.test(phoneNumber)) {
+      errors.phoneNumber = "Phone number must be 10 digits.";
+    }
+    if (!roomNumber) errors.roomNumber = "Room number is required.";
+    if (!username) errors.username = "Username is required.";
+    if (!password) errors.password = "Password is required.";
+
+    setFormError(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateCustomer = async () => {
+    if (!validateForm()) return; // Don't proceed if validation fails
+
     const newCustomer = {
       name: customerName,
       userType: "CUSTOMER",
@@ -88,15 +128,19 @@ const CreateCustomer = () => {
       userPassword: password,
       userName: username,
     };
+
     try {
       await dispatch(createUser(newCustomer)).unwrap();
-      alert("Customer Created Successfully");
-      await fetchData();
+      toast.success("Customer Created Successfully");
+      const action = await dispatch(getAllCustomerDetail({ pageNo:currentPage, pageSize }));
+      setCustomerData(action.payload.usersPage);
       resetForm();
       handleOpen();
     } catch (error) {
-      alert("Error Occurred While Creating User");
       console.error(error);
+      toast.error(postUserDetailsError || "Error happend while creating user")
+      // alert("Error Occurred While Creating User");
+      
     }
   };
 
@@ -106,21 +150,48 @@ const CreateCustomer = () => {
     setRoomNumber("");
     setUsername("");
     setPassword("");
+    setFormError({});
   };
 
   const handleDeleteCustomer = async (customerId) => {
     try {
       await dispatch(deleteUserDetail(customerId)).unwrap();
-      await fetchData();
-      alert("Customer Deleted Successfully");
+      await fetchData(currentPage, pageSize);
+      toast.success("Customer Deleted Successfully");
     } catch (error) {
-      alert("Error Occurred While Deleting User");
       console.error(error);
+      toast.error(deleteUserDetailError ||error)
+     
     }
   };
 
-  const handleNextPage = () => setPageNo((prev) => prev + 1);
-  const handlePreviousPage = () => setPageNo((prev) => Math.max(prev - 1, 1));
+  const handlePageSizeChange = (newSize) => {
+    const parsedSize = parseInt(newSize, 10);
+    setPageSize(parsedSize);
+
+    setCurrentPage(1);
+    setSelectKey((prevKey) => prevKey + 1); // Force re-render of Select
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const generateOptions = () => {
+    const options = [];
+    for (let i = 1; i <= Math.min(totalRecords, 50); i++) {
+      options.push(i);
+    }
+    return options;
+  };
 
   return (
     <Card className="h-full w-full">
@@ -188,8 +259,17 @@ const CreateCustomer = () => {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Enter Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+                className={`w-full px-4 py-2 border ${
+                  formError.customerName ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  formError.customerName
+                    ? "focus:ring-red-500"
+                    : "focus:ring-gray-700"
+                } focus:border-transparent`}
               />
+              {formError.customerName && (
+                <p className="text-red-500 text-sm">{formError.customerName}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -200,8 +280,17 @@ const CreateCustomer = () => {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Enter Phone Number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+                className={`w-full px-4 py-2 border ${
+                  formError.phoneNumber ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  formError.phoneNumber
+                    ? "focus:ring-red-500"
+                    : "focus:ring-gray-700"
+                } focus:border-transparent`}
               />
+              {formError.phoneNumber && (
+                <p className="text-red-500 text-sm">{formError.phoneNumber}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -212,8 +301,17 @@ const CreateCustomer = () => {
                 value={roomNumber}
                 onChange={(e) => setRoomNumber(e.target.value)}
                 placeholder="Enter Room Number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+                className={`w-full px-4 py-2 border ${
+                  formError.roomNumber ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  formError.roomNumber
+                    ? "focus:ring-red-500"
+                    : "focus:ring-gray-700"
+                } focus:border-transparent`}
               />
+              {formError.roomNumber && (
+                <p className="text-red-500 text-sm">{formError.roomNumber}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -224,8 +322,17 @@ const CreateCustomer = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter Username"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+                className={`w-full px-4 py-2 border ${
+                  formError.username ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  formError.username
+                    ? "focus:ring-red-500"
+                    : "focus:ring-gray-700"
+                } focus:border-transparent`}
               />
+              {formError.username && (
+                <p className="text-red-500 text-sm">{formError.username}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -236,8 +343,17 @@ const CreateCustomer = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter Password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
+                className={`w-full px-4 py-2 border ${
+                  formError.password ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 ${
+                  formError.password
+                    ? "focus:ring-red-500"
+                    : "focus:ring-gray-700"
+                } focus:border-transparent`}
               />
+              {formError.password && (
+                <p className="text-red-500 text-sm">{formError.password}</p>
+              )}
             </div>
           </CardBody>
 
@@ -373,30 +489,67 @@ const CreateCustomer = () => {
         </table>
       </CardBody>
 
-      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+      <CardFooter className="flex justify-between items-center border-t border-blue-gray-50 p-4 mt-1">
         <Typography variant="small" color="blue-gray" className="font-normal">
-          Page 1 of 10
+          Showing page {currentPage} of {Math.ceil(totalRecords / pageSize)}
         </Typography>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-8 flex items-center justify-center ">
+            {" "}
+            {/* Reduced width from w-20 to w-16 */}
+            <Select
+              key={selectKey}
+              value={pageSize.toString()}
+              onChange={handlePageSizeChange}
+              containerProps={{
+                className: "min-w-[64px] h-full",
+              }}
+              className="w-full h-full text-sm"
+              labelProps={{
+                className: "hidden",
+              }}
+            >
+              {generateOptions().map((size) => (
+                <Option
+                  key={size}
+                  value={size.toString()}
+                  className="py-1 text-sm"
+                >
+                  {size}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
           <Button
-            v
-            variant="outlined"
             size="sm"
+            variant="outlined"
+            disabled={currentPage === 1}
             onClick={handlePreviousPage}
-            disabled={pageNo === 1}
           >
             Previous
           </Button>
+
           <Button
-            variant="outlined"
             size="sm"
-            className=""
+            variant="outlined"
+            disabled={currentPage === totalPages}
             onClick={handleNextPage}
           >
             Next
           </Button>
         </div>
       </CardFooter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </Card>
   );
 };

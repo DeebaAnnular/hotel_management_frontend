@@ -12,14 +12,18 @@ import {
   CardBody,
   CardFooter,
   Dialog,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import { MdClose } from "react-icons/md";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   getAllCustomerTask,
   createTask,
   deleteTask,
 } from "../../redux/slices/taskSlice";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TABLE_HEAD = ["Customer Task", "Action"];
 
@@ -27,49 +31,93 @@ const CustomerTask = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // Add sort order state
   const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen((cur) => !cur);
+  const handleOpen = () => {
+    setCustomerTask("");
+    setOpen((cur) => !cur);
+  };
   const [customerTask, setCustomerTask] = useState("");
   const [allCustomerTask, setAllCustomerTask] = useState([]);
+
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 50;
+  const [selectKey, setSelectKey] = useState(0);
+  const [formError, setFormError] = useState("");
+
   const dispatch = useDispatch();
 
+  const { customerTaskListError, postTaskDetailsError, deleteTaskError } =
+    useSelector((state) => state.task);
+
   const handleCreateTask = async () => {
-    if (customerTask.trim()) {
-      const taskDetails = {
-        taskName: customerTask,
-        taskType: "CUSTOMER TASK",
-      };
-      await dispatch(createTask(taskDetails));
-      alert("Task created successfully");
-      setCustomerTask("");
-      handleOpen();
-      fetchAllCustomerTask(); // Refresh the task list after creation
+    if (!customerTask.trim()) {
+      setFormError("Please enter a task name");
+      return;
+    }
+    setFormError("");
+    const taskDetails = {
+      taskName: customerTask,
+      taskType: "CUSTOMER TASK",
+    };
+
+    try {
+      const resultAction = await dispatch(createTask(taskDetails));
+      if (createTask.fulfilled.match(resultAction)) {
+        toast.success("Task created successfully");
+        setCustomerTask("");
+        handleOpen();
+        await fetchAllCustomerTask(currentPage, pageSize);
+      } else {
+        toast.error("Failed to create task. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating task:", error);
+      setFormError(postTaskDetailsError);
     }
   };
 
-  const fetchAllCustomerTask = async () => {
+  const fetchAllCustomerTask = async (currentPage, pageSize) => {
     const pageDetails = {
       pageNo: currentPage,
       pageSize,
     };
-    const response = await dispatch(getAllCustomerTask(pageDetails));
-    setAllCustomerTask(response.payload || []); // Store the fetched tasks
+    try {
+      const response = await dispatch(getAllCustomerTask(pageDetails));
+      console.log("response :", response.payload);
+      setAllCustomerTask(response?.payload?.taskDataList);
+      setTotalRecords(response?.payload?.totalRecords);
+      setTotalPages(Math.ceil(response?.payload?.totalRecords / pageSize));
+    } catch (error) {
+      console.log("error in fetching general task list", error);
+      toast.error(customerTaskListError);
+    }
   };
 
   const handleDeleteTask = async (taskDataId) => {
-    await dispatch(deleteTask(taskDataId));
-    alert("Task deleted successfully");
-    fetchAllCustomerTask(); // Refresh the task list after deletion
+    try {
+      const resultAction = await dispatch(deleteTask(taskDataId));
+      if (deleteTask.fulfilled.match(resultAction)) {
+        toast.success("Task Deleted Successfully!");
+        fetchAllCustomerTask(currentPage, pageSize); 
+      } else {
+        allCustomerTask && toast.error(deleteTaskError);
+      }
+    } catch (error) {
+      allCustomerTask &&
+        toast.error(
+          deleteTaskError 
+        );
+    }
   };
 
+  console.log("customer component", deleteTaskError);
   useEffect(() => {
-    fetchAllCustomerTask();
-  }, [currentPage]);
+    fetchAllCustomerTask(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
-  // Filtering and sorting tasks based on search query and sort order
   const filteredTasks = useMemo(() => {
-    let tasks = allCustomerTask.filter((task) =>
+    let tasks = allCustomerTask?.filter((task) =>
       task.taskName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -84,6 +132,33 @@ const CustomerTask = () => {
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  };
+  const handlePageSizeChange = (newSize) => {
+    const parsedSize = parseInt(newSize, 10);
+    setPageSize(parsedSize);
+
+    setCurrentPage(1);
+    setSelectKey((prevKey) => prevKey + 1); // Force re-render of Select
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const generateOptions = () => {
+    const options = [];
+    for (let i = 1; i <= Math.min(totalRecords, 50); i++) {
+      options.push(i);
+    }
+    return options;
   };
 
   return (
@@ -160,6 +235,11 @@ const CustomerTask = () => {
                   placeholder="Enter Task Name"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
                 />
+                {formError && (
+                  <Typography color="red" className="text-center">
+                    {formError}
+                  </Typography>
+                )}
               </div>
             </CardBody>
 
@@ -237,38 +317,78 @@ const CustomerTask = () => {
               })
             ) : (
               <tr>
-              <td
-                colSpan={5}
-                className="text-center border-b border-blue-gray-100 p-4"
-              >
-                No records found
-              </td>
-            </tr>
+                <td
+                  colSpan={5}
+                  className="text-center border-b border-blue-gray-100 p-4"
+                >
+                  No records found
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </CardBody>
-      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+      <CardFooter className="flex justify-between items-center border-t border-blue-gray-50 p-4 mt-1">
         <Typography variant="small" color="blue-gray" className="font-normal">
-          Page {currentPage}
+          Showing page {currentPage} of {Math.ceil(totalRecords / pageSize)}
         </Typography>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-8 flex items-center justify-center ">
+            {" "}
+            {/* Reduced width from w-20 to w-16 */}
+            <Select
+              key={selectKey}
+              value={pageSize.toString()}
+              onChange={handlePageSizeChange}
+              containerProps={{
+                className: "min-w-[64px] h-full",
+              }}
+              className="w-full h-full text-sm"
+              labelProps={{
+                className: "hidden",
+              }}
+            >
+              {generateOptions().map((size) => (
+                <Option
+                  key={size}
+                  value={size.toString()}
+                  className="py-1 text-sm"
+                >
+                  {size}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
           <Button
-            variant="outlined"
             size="sm"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            variant="outlined"
+            disabled={currentPage === 1}
+            onClick={handlePreviousPage}
           >
             Previous
           </Button>
+
           <Button
-            variant="outlined"
             size="sm"
-            onClick={() => setCurrentPage((prev) => prev + 1)}
+            variant="outlined"
+            disabled={currentPage === totalPages}
+            onClick={handleNextPage}
           >
             Next
           </Button>
         </div>
       </CardFooter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </Card>
   );
 };

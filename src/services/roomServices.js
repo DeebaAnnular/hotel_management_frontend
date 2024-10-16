@@ -7,12 +7,12 @@ const baseURL = "http://13.127.57.68:8080";
 
 export const getAllRoomDetailsAPI = async (pageNo, pageSize) => {
   try {
-    const token = localStorage.getItem("jwt"); // Retrieve the token from localStorage
+    const token = localStorage.getItem("jwt"); 
     const response = await axios.get(
       `${baseURL}/floor/getAllRoomDataDetails?pageNo=${pageNo}&pageSize=${pageSize}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`, // Set the Bearer token in the Authorization header
+          Authorization: `Bearer ${token}`, 
         },
       }
     );
@@ -20,7 +20,7 @@ export const getAllRoomDetailsAPI = async (pageNo, pageSize) => {
     return response.data.data; // Return the data directly
   } catch (error) {
     console.log("Error fetching floor details: ", error);
-    throw Error(error.response?.data.message || "Error fetching data");
+    throw error.response?.data || new Error("Error fetching data");
   }
 };
 
@@ -39,8 +39,8 @@ export const postRoomAPI = async (roomDetails) => {
     );
     return response.data; // Return the response data
   } catch (error) {
-    console.log("Error saving floor details: ", error);
-    throw Error(error.response?.data.message || "Error saving data");
+    console.log("Error saving room details: ", error);
+    throw error.response?.data || new Error("Error creating room");
   }
 };
 
@@ -59,9 +59,6 @@ export const deleteRoomAPI = async (id) => {
     return "Sucessfully Deleted";
   } catch (error) {
     console.log("Error happens while deleting room details: ", error);
-    throw Error(
-      error.response?.data.message ||
-        "Couldn't Delete room details Please Check"
-    );
+    throw error.response?.data || new Error("Error while deleting room");
   }
 };

@@ -28,12 +28,16 @@ const initialState = {
 
 export const getAllCustomerDetail = createAsyncThunk(
   "user/getAllCustomer",
-  async (pageDetails) => {
+  async (pageDetails, { rejectWithValue }) => {
     try {
       const response = await getAllCustomerDetailsAPI(pageDetails);
-      return response;
+      console.log("response", response);
+      return response.data;
     } catch (error) {
-      return "Error happend at get all customer";
+      console.log("error",error.data);
+      return rejectWithValue(
+        error.data || "An error occurred while fetching all customers"
+      );
     }
   }
 );
@@ -45,7 +49,7 @@ export const getAllServicePersonDetail = createAsyncThunk(
     try {
       const response = await getAllServicePersonDetailsAPI(pageDetails);
       console.log("response", response);
-      return response;
+      return response.data;
     } catch (error) {
       return "Error happend at get all service person";
     }
@@ -57,9 +61,9 @@ export const getAllSupervisorDetail = createAsyncThunk(
   async (pageDetails, { rejectWithValue }) => {
     try {
       const response = await getAllSupervicerDetailsAPI(pageDetails);
-      return response;
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.data ||"Error in getting all supervisor details");
     }
   }
 );
@@ -71,7 +75,7 @@ export const createUser = createAsyncThunk(
       const response = await postUserDetailsAPI(userDetails);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error?.data ||"Error happend while creating user");
     }
   }
 );
@@ -83,7 +87,7 @@ export const deleteUserDetail = createAsyncThunk(
       const response = await deleteUserDetailsAPI(id);
       return response;
     } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
+      return rejectWithValue(error.data || "Error happend while deleting user");
     }
   }
 );
@@ -105,8 +109,9 @@ const userSlice = createSlice({
         state.customerList = action.payload;
       })
       .addCase(getAllCustomerDetail.rejected, (state, action) => {
-        state.customerListLoading = false;
+        state.customerListLoading = false;      
         state.customerListError = action.payload;
+        console.log("customerListError", action.payload);
       })
 
       // For getAllServicePersonDetail
@@ -120,6 +125,7 @@ const userSlice = createSlice({
       })
       .addCase(getAllServicePersonDetail.rejected, (state, action) => {
         state.servicePersonListLoading = false;
+        console.log("servicePersonListError", action.payload);
         state.servicePersonListError = action.payload;
       })
 
@@ -134,6 +140,7 @@ const userSlice = createSlice({
       })
       .addCase(getAllSupervisorDetail.rejected, (state, action) => {
         state.supervicerListLoading = false;
+        console.log("supervicerListError", action.payload);
         state.supervicerListError = action.payload;
       })
 
@@ -148,6 +155,7 @@ const userSlice = createSlice({
       })
       .addCase(createUser.rejected, (state, action) => {
         state.postUserDetailsLoading = false;
+        console.log("postUserDetailsError", action.payload);
         state.postUserDetailsError = action.payload;
       })
 
@@ -162,6 +170,7 @@ const userSlice = createSlice({
       })
       .addCase(deleteUserDetail.rejected, (state, action) => {
         state.deleteUserDetailLoading = false;
+        console.log("deleteUserDetailError", action.payload);
         state.deleteUserDetailError = action.payload;
       });
   },

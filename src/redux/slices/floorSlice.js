@@ -5,7 +5,6 @@ import {
   deleteFloorAPI,
 } from "../../services/floorServices";
 
-// Initial state
 const initialState = {
   floorDetails: [],
   floorDetailsLoading: false,
@@ -20,46 +19,48 @@ const initialState = {
 
 export const getAllFloorDetails = createAsyncThunk(
   "floor/getAllFloorDetails",
-  async ({ pageNo, pageSize }) => {
+  async ({ pageNo, pageSize }, { rejectWithValue }) => {
     try {
       const data = await getAllFoorDetailsAPI(pageNo, pageSize);
-
       return data;
     } catch (error) {
-      // Return the error message for rejection
-      return error.response?.data || error.message;
+      console.error("Thunk Error:", error);
+      return rejectWithValue(
+        error.data || "An error occurred while fetching floor details"
+      );
     }
   }
 );
 
 export const createFloorName = createAsyncThunk(
   "floor/createFloorName",
-  async (floorName) => {
+  async (floorName, { rejectWithValue }) => {
     try {
       const floorNameDetail = {
         floorName: floorName,
       };
       const responseData = await postFloorNameAPI(floorNameDetail);
-      return floorName;
+      return responseData; // Return the full response data
     } catch (error) {
-      return error.response?.data || error.message;
+      return rejectWithValue(
+        error.data || "An error occurred while creating floor"
+      );
     }
   }
 );
 
 export const deleteFloorName = createAsyncThunk(
   "floor/deleteFloorName",
-  async (id) => {
+  async (floorId, { rejectWithValue }) => {
     try {
-      const response = await deleteFloorAPI(id);
-      console.log("delete response", response);
-      return response;
+      const response = await deleteFloorAPI(floorId);
+      return response; 
     } catch (error) {
-      return error.response?.data || error.message;
+      console.error("Thunk Error:", error);
+      return rejectWithValue(error.data); 
     }
   }
 );
-
 const floorSlice = createSlice({
   name: "floor",
   initialState,
@@ -76,6 +77,7 @@ const floorSlice = createSlice({
       })
       .addCase(getAllFloorDetails.rejected, (state, action) => {
         state.floorDetailsLoading = false;
+        console.log("from slice", action.payload);
         state.floorDetailsError = action.payload;
       })
       // For createFloorName
@@ -85,10 +87,11 @@ const floorSlice = createSlice({
       })
       .addCase(createFloorName.fulfilled, (state, action) => {
         state.postFloorLoading = false;
-        state.floorDetail = action.payload; 
+        state.floorDetail = action.payload;
       })
       .addCase(createFloorName.rejected, (state, action) => {
         state.postFloorLoading = false;
+        console.log("postFloorNameError", action.payload);
         state.postFloorNameError = action.payload;
       })
       // For Delete Floor Name
@@ -98,10 +101,12 @@ const floorSlice = createSlice({
       })
       .addCase(deleteFloorName.fulfilled, (state, action) => {
         state.postFloorLoading = false;
-        state.deleteFloorSucessMsg = action.payload; 
+        state.deleteFloorSucessMsg = action.payload;
       })
       .addCase(deleteFloorName.rejected, (state, action) => {
         state.deleteFloorLoading = false;
+
+        console.log("error",action.payload);
         state.deleteFloorNameError = action.payload;
       });
   },

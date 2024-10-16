@@ -3,28 +3,39 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login } from "../redux/slices/loginSlice";
 import hotelLoginImg from "../assets/hotelLoginImg.png";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai'; // Import eye icons
 
-const Login= () => {
-  const [userName, setUserName] = useState(""); // Typed useState
-  const [userPassword, setPassword] = useState(""); // Typed useState
-  const dispatch = useDispatch() // Typed dispatch with AppDispatch
+const Login = () => {
+  const [userName, setUserName] = useState(""); 
+  const [userPassword, setPassword] = useState(""); 
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const dispatch = useDispatch(); 
   const navigate = useNavigate();
   
-  const { isAuthenticated, loading, error } = useSelector((state) => state.login); // Typed useSelector with RootState
+  const { isAuthenticated, loading, loginError } = useSelector((state) => state.login);
 
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     navigate("/layout");
-  //   }
-  // }, [isAuthenticated, navigate]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.success("Login successful!");
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (loginError) {
+      toast.error(loginError);
+    }
+  }, [loginError]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const credential = {
       userName,
-      userPassword, // Assuming password should be a number
+      userPassword,
     };
-    dispatch(login(credential)); // Dispatch the login action
+    dispatch(login(credential));
   };
 
   return (
@@ -50,16 +61,23 @@ const Login= () => {
                 required
               />
             </div>
-            <div className="mb-4">
+            <div className="mb-4 relative"> {/* Added relative position for the eye icon */}
               <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"} // Toggle between text and password
                 placeholder="Enter your password"
                 value={userPassword}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:border-green-500"
                 required
               />
+              {/* Eye icon for showing/hiding password */}
+              <span 
+                onClick={() => setShowPassword(!showPassword)} 
+                className="absolute right-3 top-10 cursor-pointer" // Adjust position as needed
+              >
+                {showPassword ? <AiFillEyeInvisible size={20} /> : <AiFillEye size={20} />}
+              </span>
             </div>
             <button
               type="submit"
@@ -68,7 +86,7 @@ const Login= () => {
             >
               {loading ? "Signing in..." : "Login"}
             </button>
-            {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
+            <ToastContainer />
           </form>
         </div>
       </div>

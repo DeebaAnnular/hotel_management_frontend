@@ -23,7 +23,7 @@ export const getAllGeneralTaskAPI = async (pageDetails) => {
   } catch (error) {
     console.log("Error fetching general task details: ", error);
     throw Error(
-      error.response?.data.message || "Error fetching  general task details"
+      error.response?.data || "Error fetching  general task details"
     );
   }
 };
@@ -40,14 +40,11 @@ export const getAllCustomerTaskAPI = async (pageNo, pageSize) => {
         },
       }
     );
-    console.log();
-
     return response.data.data;
   } catch (error) {
     console.log("Error fetching customer task details: ", error);
-    throw Error(
-      error.response?.data.message || "Error fetching customer task details"
-    );
+    throw error.response?.data || "Error fetching customer task details"
+    
   }
 };
 
@@ -67,7 +64,7 @@ export const postTaskAPI = async (taskDetails) => {
     return "Task Created Sucessfully"; // Return the response data
   } catch (error) {
     console.log("Error saving floor details: ", error);
-    throw Error(error.response?.data.message || "Error saving data");
+    throw error.response?.data || "Error saving data";
   }
 };
 
@@ -85,9 +82,8 @@ export const deleteTaskAPI = async (id) => {
     console.log("delete response", response);
     return "Task Deleted Sucessfully";
   } catch (error) {
-    console.log("Error happen while deleting task: ", error);
-    throw Error(
-      error.response?.data.message || "Couldn't Delete task Please Check"
-    );
+    console.log("Error happen while deleting task: ",error.response?.data);
+    throw error.response?.data|| "Couldn't Delete task Please Check"
+    
   }
 };

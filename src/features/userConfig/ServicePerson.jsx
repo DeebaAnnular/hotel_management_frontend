@@ -11,6 +11,8 @@ import {
   CardBody,
   CardFooter,
   Dialog,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -19,6 +21,8 @@ import {
   deleteUserDetail,
 } from "../../redux/slices/userConfigSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TABLE_HEAD = ["Employee ID", "Name", "Number", "Status", "Action"];
 
@@ -33,37 +37,68 @@ const ServicePerson = () => {
   const [servicePersonList, setServicePersonList] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [pageNo, setPageNo] = useState(1);
-  const pageSize = 50;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectKey, setSelectKey] = useState(0);
+  const [formError, setFormError] = useState("");
+
   const dispatch = useDispatch();
 
-  const fetchData = async () => {
+  const {
+    servicePersonListError,
+    postUserDetailsError,
+    deleteUserDetailError,
+  } = useSelector((state) => state.user);
+
+  const fetchData = async (currentPage, pageSize) => {
     try {
       const action = await dispatch(
-        getAllServicePersonDetail({ pageNo, pageSize })
+        getAllServicePersonDetail({ pageNo: currentPage, pageSize })
       );
       if (getAllServicePersonDetail.fulfilled.match(action)) {
-        setServicePersonList(action.payload);
+        setServicePersonList(action.payload.usersPage);
+        setTotalRecords(action.payload.totalRecords);
+        setTotalPages(Math.ceil(action.payload.totalRecords / pageSize));
+      } else {
+        setServicePersonList([]);
+        toast.error(servicePersonListError);
       }
     } catch (error) {
+      toast.error(servicePersonListError || error);
       console.error("Error fetching service person data:", error);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, [dispatch]);
+    fetchData(currentPage, pageSize);
+  }, [currentPage, pageSize, dispatch]);
+
+  // const filteredAndSortedServicePerson = useMemo(() => {
+  //   let result = servicePersonList.filter((customer) => {
+  //     const lowerCaseSearchQuery = searchQuery.trim().toLowerCase();
+  //     return (
+  //       customer.name?.toLowerCase().includes(lowerCaseSearchQuery) ||
+  //       customer.userActive?.toLowerCase().includes(lowerCaseSearchQuery)
+  //     );
+  //   });
+
+  //   result.sort((a, b) => {
+  //     return sortOrder === "asc"
+  //       ? a.name.localeCompare(b.name)
+  //       : b.name.localeCompare(a.name);
+  //   });
+
+  //   return result;
+  // }, [searchQuery, sortOrder, servicePersonList]);
 
   const filteredAndSortedServicePerson = useMemo(() => {
-    let result = servicePersonList.filter((customer) => {
-      const lowerCaseSearchQuery = searchQuery.trim().toLowerCase();
-      return (
-        customer.name?.toLowerCase().includes(lowerCaseSearchQuery) ||
-        customer.employeeId?.toLowerCase().includes(lowerCaseSearchQuery)
-      );
-    });
+    let result = servicePersonList?.filter((customer) =>
+      customer.name?.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    );
 
-    result.sort((a, b) => {
+    result?.sort((a, b) => {
       return sortOrder === "asc"
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name);
@@ -75,8 +110,30 @@ const ServicePerson = () => {
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
+  const validateForm = () => {
+    if (
+      !servicePersonName ||
+      !employeeId ||
+      !phoneNumber ||
+      !username ||
+      !password ||
+      !gender
+    ) {
+      setFormError("Please fill out all fields.");
+      return false;
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      setFormError("Please enter a valid 10-digit phone number.");
+      return false;
+    }
+    setFormError(""); // Clear error if validation passes
+    return true;
+  };
 
   const handleCreateServicePerson = async () => {
+    if (!validateForm()) return;
+
     const newServicePerson = {
       name: servicePersonName,
       employeeId: employeeId,
@@ -86,15 +143,16 @@ const ServicePerson = () => {
       userPassword: password,
       userGender: gender,
     };
+
     try {
       await dispatch(createUser(newServicePerson)).unwrap();
-      alert("Service Person Created Successfully");
-      fetchData();
+      toast.success("Service Person Created Successfully");
+      fetchData(currentPage, pageSize);
       resetForm();
       handleOpen();
     } catch (error) {
       console.error("Error creating service person:", error);
-      alert("Error Occurred While Creating User");
+      toast.error(postUserDetailsError || "Error happened while creating user");
     } finally {
       handleClose();
     }
@@ -114,17 +172,41 @@ const ServicePerson = () => {
   const handleDeleteServicePerson = async (userId) => {
     try {
       await dispatch(deleteUserDetail(userId)).unwrap();
-      await fetchData();
-      alert("Service Person Deleted Successfully");
+      await fetchData(currentPage, pageSize);
+      toast.success("Service Person Deleted Successfully");
     } catch (error) {
-      alert("Error Occurred While Deleting User");
+      toast.error(deleteUserDetailError || error);
       console.error(error);
     }
   };
 
-  const handleNextPage = () => setPageNo((prev) => prev + 1);
-  const handlePreviousPage = () => setPageNo((prev) => Math.max(prev - 1, 1));
+  const handlePageSizeChange = (newSize) => {
+    const parsedSize = parseInt(newSize, 10);
+    setPageSize(parsedSize);
 
+    setCurrentPage(1);
+    setSelectKey((prevKey) => prevKey + 1); // Force re-render of Select
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const generateOptions = () => {
+    const options = [];
+    for (let i = 1; i <= Math.min(totalRecords, 50); i++) {
+      options.push(i);
+    }
+    return options;
+  };
   return (
     <Card className="h-full w-full">
       <div className="p-4 w-full flex items-center justify-center">
@@ -276,7 +358,11 @@ const ServicePerson = () => {
                   >
                     {head}{" "}
                     {index !== TABLE_HEAD.length - 1 && (
-                      <ChevronUpDownIcon strokeWidth={2} className="h-4 w-4" />
+                      <ChevronUpDownIcon
+                        strokeWidth={2}
+                        className="h-4 w-4"
+                        onClick={toggleSortOrder}
+                      />
                     )}
                   </Typography>
                 </th>
@@ -333,30 +419,67 @@ const ServicePerson = () => {
           </tbody>
         </table>
       </CardBody>
-      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+      <CardFooter className="flex justify-between items-center border-t border-blue-gray-50 p-4 mt-1">
         <Typography variant="small" color="blue-gray" className="font-normal">
-          Page 1 of 10
+          Showing page {currentPage} of {Math.ceil(totalRecords / pageSize)}
         </Typography>
-        <div className="flex gap-2">
+
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-8 flex items-center justify-center ">
+            {" "}
+            {/* Reduced width from w-20 to w-16 */}
+            <Select
+              key={selectKey}
+              value={pageSize.toString()}
+              onChange={handlePageSizeChange}
+              containerProps={{
+                className: "min-w-[64px] h-full",
+              }}
+              className="w-full h-full text-sm"
+              labelProps={{
+                className: "hidden",
+              }}
+            >
+              {generateOptions().map((size) => (
+                <Option
+                  key={size}
+                  value={size.toString()}
+                  className="py-1 text-sm"
+                >
+                  {size}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
           <Button
-            v
-            variant="outlined"
             size="sm"
+            variant="outlined"
+            disabled={currentPage === 1}
             onClick={handlePreviousPage}
-            disabled={pageNo === 1}
           >
             Previous
           </Button>
+
           <Button
-            variant="outlined"
             size="sm"
-            className=""
+            variant="outlined"
+            disabled={currentPage === totalPages}
             onClick={handleNextPage}
           >
             Next
           </Button>
         </div>
       </CardFooter>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </Card>
   );
 };

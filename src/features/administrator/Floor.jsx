@@ -14,6 +14,8 @@ import {
   CardFooter,
   Typography,
   Input,
+  Select,
+  Option,
 } from "@material-tailwind/react";
 import { MdClose } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,6 +25,8 @@ import {
   createFloorName,
   deleteFloorName,
 } from "../../redux/slices/floorSlice";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TABLE_HEAD = ["Floor Name", "Action"];
 
@@ -30,33 +34,51 @@ const Floor = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen((cur) => !cur);
+  const handleOpen = () => {
+    setFloorName("");
+    setFormError("");
+    setOpen((cur) => !cur);
+  };
   const [floorName, setFloorName] = useState("");
-  const [data, setData] = useState([]);
+  const [allFloorData, setAllFloorData] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectKey, setSelectKey] = useState(0);
+  const [formError, setFormError] = useState("");
 
   const dispatch = useDispatch();
-  const floorNames = useSelector(selectFloorDetails);
+  const { floorDetailsError, postFloorNameError, deleteFloorNameError } =
+    useSelector((state) => state.floor);
+  const fetchFloorDetails = async (pageNo = 1, size = pageSize) => {
+    try {
+      const response = await dispatch(
+        getAllFloorDetails({ pageNo, pageSize: size })
+      );
+      const allFloorDetails = response.payload;
 
-  const {
-    floorDetails = [],
-    floorDetailsLoading,
-    floorDetailsError,
-  } = useSelector((state) => state.floor || {});
+      const extractedFloorNames = allFloorDetails.floors
+        .filter((floor) => floor.floorName)
+        .map((floor) => ({
+          floorName: floor.floorName,
+          floorId: floor.floorId,
+        }));
 
-  const pageNo = 1; // Set the page number you want to fetch
-  const pageSize = 50; // Set the desired page size
+      setAllFloorData(extractedFloorNames);
+      setTotalRecords(allFloorDetails.totalRecords);
+      setTotalPages(Math.ceil(allFloorDetails.totalRecords / size));
+    } catch (error) {
+      // toast.error(floorDetailsError);
+    }
+  };
 
   useEffect(() => {
-    const fetchFloorDetails = async () => {
-      const data = await dispatch(getAllFloorDetails({ pageNo, pageSize }));
-      setData(data);
-    };
-    fetchFloorDetails();
-  }, [dispatch, pageNo, pageSize]);
-
+    fetchFloorDetails(currentPage, pageSize);
+  }, [currentPage, pageSize]);
   const filteredAndSortedRows = useMemo(() => {
-    let result = floorNames?.filter((row) =>
-      row.floorName?.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    let result = allFloorData.filter((row) =>
+      row.floorName.toLowerCase().includes(searchQuery.trim().toLowerCase())
     );
 
     result.sort((a, b) => {
@@ -66,32 +88,88 @@ const Floor = () => {
     });
 
     return result;
-  }, [searchQuery, sortOrder, floorDetails]);
+  }, [searchQuery, sortOrder, allFloorData]);
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
   const handleCreateFloor = async () => {
-    await dispatch(createFloorName(floorName));
-    alert("Floor successfully added!");
-    const data = await dispatch(getAllFloorDetails({ pageNo, pageSize }));
-    setData(data);
-    setFloorName("");
-    handleOpen();
+    if (!floorName.trim()) {
+      setFormError("Please enter floor name");
+    } else {
+      try {
+        const resultAction = await dispatch(createFloorName(floorName.trim()));
+        if (createFloorName.fulfilled.match(resultAction)) {
+          toast.success("Floor successfully added!");
+          await fetchFloorDetails(currentPage, pageSize);
+          setFloorName("");
+          handleOpen();
+        } else if (createFloorName.rejected.match(resultAction)) {
+          setFormError(
+            postFloorNameError || "An error occurred while creating the room"
+          );
+          throw new Error(resultAction.payload);
+        }
+      } catch (error) {
+        setFormError(
+          postFloorNameError || "An error occurred while creating the room"
+        );
+      }
+    }
   };
 
   const handleDeleteFloorName = async (floorId) => {
-    await dispatch(deleteFloorName(floorId)); // Ensure you await the delete action
-    const data = await dispatch(getAllFloorDetails({ pageNo, pageSize }));
-    setData(data);
-    alert("Floor successfully deleted!"); // Show success message
+    try {
+      const resultAction = await dispatch(deleteFloorName(floorId)); // Capture the result
+      if (deleteFloorName.fulfilled.match(resultAction)) {
+        toast.success("Floor successfully deleted!");
+        await fetchFloorDetails(currentPage, pageSize); // Refresh the floor list
+      } else {
+        // If it rejected, it means there was an error
+        toast.error(
+          resultAction.payload || "Error occurred while deleting the floor"
+        );
+        console.error("Error deleting floor:", resultAction.payload); // Log the error
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error.message);
+      toast.error(deleteFloorNameError);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    const parsedSize = parseInt(newSize, 10);
+    setPageSize(parsedSize);
+
+    setCurrentPage(1);
+    setSelectKey((prevKey) => prevKey + 1); // Force re-render of Select
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const generateOptions = () => {
+    const options = [];
+    for (let i = 1; i <= Math.min(totalRecords, 50); i++) {
+      options.push(i);
+    }
+    return options;
   };
 
   return (
     <Card className="h-full w-full shadow-lg">
       <div className="p-4 flex justify-between items-center">
-      <div className="flex items-center justify-between w-full ">
+        <div className="flex items-center justify-between w-full ">
           <Typography
             variant="h5"
             color="blue-gray"
@@ -103,7 +181,7 @@ const Floor = () => {
             <div className="relative flex w-full max-w-[24rem]">
               <Input
                 type="text"
-                label="Search Task"
+                label="Search Floor"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pr-20"
@@ -129,7 +207,7 @@ const Floor = () => {
           size="xs"
           open={open}
           handler={handleOpen}
-          className="bg-transparent shadow-none"
+          className="bg-transparent shadow-none z-[1000]"
         >
           <Card className="mx-auto w-full max-w-[24rem] shadow-lg relative">
             <Button
@@ -142,7 +220,11 @@ const Floor = () => {
             </Button>
 
             <CardBody className="flex flex-col gap-6">
-              <Typography variant="h4" color="blue-gray" className="font-semibold">
+              <Typography
+                variant="h4"
+                color="blue-gray"
+                className="font-semibold"
+              >
                 Add Floor
               </Typography>
 
@@ -159,6 +241,13 @@ const Floor = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent"
                 />
               </div>
+
+              {/* Show error message if it exists */}
+              {formError && (
+                <Typography color="red" className="text-center">
+                  {formError}
+                </Typography>
+              )}
             </CardBody>
 
             <CardFooter className="pt-0 flex justify-end">
@@ -201,56 +290,105 @@ const Floor = () => {
             {filteredAndSortedRows.length > 0 ? (
               filteredAndSortedRows.map(({ floorName, floorId }, index) => {
                 const isLast = index === filteredAndSortedRows.length - 1;
-                const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
+                const classes = isLast
+                  ? "p-4"
+                  : "p-4 border-b border-blue-gray-50";
 
                 return (
-                  <tr key={index} className="even:bg-blue-gray-50/50">
+                  <tr key={index}>
                     <td className={classes}>
-                      <Typography variant="small" color="blue-gray" className="font-normal">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
                         {floorName}
                       </Typography>
                     </td>
                     <td className={classes}>
-                      <Button
-                        variant="text"
-                        color="red"
-                        className="flex items-center gap-1"
-                        onClick={() => handleDeleteFloorName(floorId)} // Updated function name
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        <TrashIcon
+                          className="h-5 w-5 text-red-500 cursor-pointer"
+                          onClick={() => handleDeleteFloorName(floorId)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-              <td
-                colSpan={5}
-                className="text-center border-b border-blue-gray-100 p-4"
-              >
-                No records found
-              </td>
-            </tr>
+                <td className="text-center p-4" colSpan={2}>
+                  No records found.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </CardBody>
 
-      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+      <CardFooter className="flex justify-between items-center border-t border-blue-gray-50 p-4 mt-1">
         <Typography variant="small" color="blue-gray" className="font-normal">
-          Page 1 of 10
+          Showing page {currentPage} of {Math.ceil(totalRecords / pageSize)}
         </Typography>
-        <div className="flex gap-2">
-          <Button variant="outlined" size="sm">
+
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-8 flex items-center justify-center ">
+            {" "}
+            {/* Reduced width from w-20 to w-16 */}
+            <Select
+              key={selectKey}
+              value={pageSize.toString()}
+              onChange={handlePageSizeChange}
+              containerProps={{
+                className: "min-w-[64px] h-full",
+              }}
+              className="w-full h-full text-sm"
+              labelProps={{
+                className: "hidden",
+              }}
+            >
+              {generateOptions().map((size) => (
+                <Option
+                  key={size}
+                  value={size.toString()}
+                  className="py-1 text-sm"
+                >
+                  {size}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          <Button
+            size="sm"
+            variant="outlined"
+            disabled={currentPage === 1}
+            onClick={handlePreviousPage}
+          >
             Previous
           </Button>
-          <Button variant="outlined" size="sm">
+
+          <Button
+            size="sm"
+            variant="outlined"
+            disabled={currentPage === totalPages}
+            onClick={handleNextPage}
+          >
             Next
           </Button>
         </div>
       </CardFooter>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+      />
     </Card>
   );
 };

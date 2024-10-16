@@ -45,7 +45,7 @@ const UserConfiguration = () => {
   return (
     <Card className="h-full w-full bg-primaryBg p-8">
       <div className="flex flex-col items-center justify-between gap-4 md:flex-row ">
-        <Tabs value={activeTab} className="w-full md:w-[45%] mb-2 ">
+        <Tabs value={activeTab} className="w-full md:w-[75%] mb-2 ">
           <TabsHeader>
             {TABS.map(({ label, value }) => (
               <Tab
